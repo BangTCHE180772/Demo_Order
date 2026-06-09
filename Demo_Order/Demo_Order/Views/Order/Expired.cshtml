@@ -1,0 +1,71 @@
+@{
+    ViewData["Title"] = "Phiên làm việc hết hạn";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/menu.css" asp-append-version="true" />
+    <style>
+        .ex-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            padding: 2rem;
+            text-align: center;
+        }
+        .ex-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            padding: 3rem 2rem;
+            max-width: 400px;
+            width: 100%;
+            animation: fadeInUp 0.6s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        }
+        .ex-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            display: block;
+            animation: pulse 2s infinite;
+        }
+        .ex-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: #0f172a;
+            margin-bottom: 0.75rem;
+        }
+        .ex-desc {
+            color: #475569;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        .ex-highlight {
+            font-weight: 700;
+            color: #4f46e5;
+        }
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @@keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+    </style>
+}
+
+<div class="ex-page">
+    <div class="ex-card">
+        <span class="ex-icon">🔒</span>
+        <h1 class="ex-title">Phiên hết hạn</h1>
+        <p class="ex-desc">
+            Bàn của bạn đã được thanh toán hoặc phiên làm việc đã kết thúc.<br/>
+            Để tiếp tục sử dụng dịch vụ, vui lòng <span class="ex-highlight">quét lại mã QR đặt tại bàn</span>.
+        </p>
+    </div>
+</div>

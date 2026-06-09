@@ -91,6 +91,7 @@ namespace Demo_Order.Models
             if (Tables.TryGetValue(tableId, out var table))
             {
                 table.Status = TableStatus.Available;
+                table.SessionToken = string.Empty;
             }
         }
     }

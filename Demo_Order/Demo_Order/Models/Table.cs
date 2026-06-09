@@ -25,5 +25,7 @@ namespace Demo_Order.Models
             TableStatus.Serving => "serving",
             _ => "unknown"
         };
+
+        public string SessionToken { get; set; } = string.Empty;
     }
 }

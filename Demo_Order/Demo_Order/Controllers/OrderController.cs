@@ -15,11 +15,11 @@ namespace Demo_Order.Controllers
         }
 
         /// <summary>
-        /// Trang menu cho khách (từ QR scan)
-        /// Nếu bàn chưa ở chế độ Serving → redirect sang CallStaff
+        /// Điểm nhận quét QR (ví dụ: /Order/Menu/1)
+        /// Thiết lập cookie cho phiên hiện tại rồi redirect sang trang Menu sạch /Order/Menu
         /// </summary>
-        [HttpGet]
-        public IActionResult Menu(int id)
+        [HttpGet("Order/Menu/{id:int}")]
+        public IActionResult MenuRedirect(int id)
         {
             if (!DataStore.Tables.TryGetValue(id, out var table))
                 return NotFound();
@@ -27,6 +27,50 @@ namespace Demo_Order.Controllers
             if (table.Status != TableStatus.Serving)
             {
                 return RedirectToAction("CallStaff", new { id });
+            }
+
+            // Thiết lập cookie TableId hiện tại và SessionToken tương ứng
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddHours(4)
+            };
+
+            Response.Cookies.Append("ActiveTableId", id.ToString(), cookieOptions);
+            Response.Cookies.Append($"TableSession_{id}", table.SessionToken, cookieOptions);
+
+            return RedirectToAction("Menu");
+        }
+
+        /// <summary>
+        /// Trang menu sạch không hiện ID trên thanh địa chỉ (/Order/Menu)
+        /// </summary>
+        [HttpGet("Order/Menu")]
+        public IActionResult Menu()
+        {
+            // Đọc TableId từ cookie
+            if (!Request.Cookies.TryGetValue("ActiveTableId", out var tableIdStr) || !int.TryParse(tableIdStr, out var id))
+            {
+                return RedirectToAction("Expired");
+            }
+
+            if (!DataStore.Tables.TryGetValue(id, out var table))
+                return NotFound();
+
+            if (table.Status != TableStatus.Serving)
+            {
+                return RedirectToAction("CallStaff", new { id });
+            }
+
+            // Kiểm tra Token hợp lệ
+            string cookieKey = $"TableSession_{id}";
+            if (!Request.Cookies.TryGetValue(cookieKey, out var clientToken) || clientToken != table.SessionToken)
+            {
+                // Xóa cookie vì token không hợp lệ
+                Response.Cookies.Delete("ActiveTableId");
+                Response.Cookies.Delete(cookieKey);
+                return RedirectToAction("Expired");
             }
 
             ViewBag.TableId = id;
@@ -41,6 +85,15 @@ namespace Demo_Order.Controllers
                 .ToDictionary(g => g.Key, g => g.ToList());
 
             return View(menuByCategory);
+        }
+
+        /// <summary>
+        /// Trang thông báo phiên làm việc hết hạn
+        /// </summary>
+        [HttpGet("Order/Expired")]
+        public IActionResult Expired()
+        {
+            return View();
         }
 
         /// <summary>
@@ -68,6 +121,13 @@ namespace Demo_Order.Controllers
 
             if (table.Status != TableStatus.Serving)
                 return BadRequest(new { message = "Bàn chưa sẵn sàng phục vụ" });
+
+            // Kiểm tra token phiên làm việc bảo mật
+            string cookieKey = $"TableSession_{request.TableId}";
+            if (!Request.Cookies.TryGetValue(cookieKey, out var token) || token != table.SessionToken)
+            {
+                return BadRequest(new { message = "Phiên làm việc đã hết hạn hoặc bàn đã thanh toán. Vui lòng quét lại mã QR tại bàn." });
+            }
 
             if (request.Items == null || !request.Items.Any())
                 return BadRequest(new { message = "Vui lòng chọn ít nhất một món" });

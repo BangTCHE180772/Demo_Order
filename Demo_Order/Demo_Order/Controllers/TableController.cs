@@ -76,6 +76,14 @@ namespace Demo_Order.Controllers
             if (Enum.TryParse<TableStatus>(request.Status, out var status))
             {
                 table.Status = status;
+                if (status == TableStatus.Serving)
+                {
+                    table.SessionToken = Guid.NewGuid().ToString();
+                }
+                else
+                {
+                    table.SessionToken = string.Empty;
+                }
                 await _hubContext.Clients.All.SendAsync("ReceiveTableStatusChanged", id, status.ToString(), table.StatusText);
                 return Json(new { success = true, status = table.Status.ToString(), statusText = table.StatusText });
             }
