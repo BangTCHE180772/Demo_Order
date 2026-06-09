@@ -142,7 +142,23 @@
 </div>
 
 @section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
     <script>
+        // Kết nối SignalR OrderHub để tự động chuyển hướng khi bàn được kích hoạt
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/orderHub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("ReceiveTableStatusChanged", (tableId, status, statusText) => {
+            if (tableId === @ViewBag.TableId && status === "Serving") {
+                // Tự động chuyển về trang Menu khi bàn được mở phục vụ
+                window.location.href = `/Order/Menu/${tableId}`;
+            }
+        });
+
+        connection.start().catch(err => console.error(err.toString()));
+
         async function callStaff() {
             const btn = document.getElementById('btn-call');
             const btnText = document.getElementById('btn-call-text');
