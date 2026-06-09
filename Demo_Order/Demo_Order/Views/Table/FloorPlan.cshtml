@@ -1,0 +1,122 @@
+@model List<Demo_Order.Models.Table>
+@{
+    ViewData["Title"] = "Sơ đồ bàn";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/floorplan.css" asp-append-version="true" />
+}
+
+<!-- Header -->
+<nav class="fp-navbar">
+    <div class="fp-navbar-brand">
+        <span class="fp-logo">🍽️</span>
+        <div>
+            <h1 class="fp-title">Nhà Hàng Demo</h1>
+            <p class="fp-subtitle">Quản lý sơ đồ bàn</p>
+        </div>
+    </div>
+    <div class="fp-navbar-actions">
+        <div class="fp-stats">
+            <div class="fp-stat" id="stat-available">
+                <span class="fp-stat-num" id="count-available">@Model.Count(t => t.Status == Demo_Order.Models.TableStatus.Available)</span>
+                <span class="fp-stat-label">Trống</span>
+            </div>
+            <div class="fp-stat" id="stat-serving">
+                <span class="fp-stat-num" id="count-serving">@Model.Count(t => t.Status == Demo_Order.Models.TableStatus.Serving)</span>
+                <span class="fp-stat-label">Phục vụ</span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Toast container -->
+<div id="toast-container" class="fp-toast-container"></div>
+
+<!-- Floor Plan Grid -->
+<div class="fp-container">
+    <div class="fp-floor-header">
+        <h2>📐 Sơ đồ tầng 1</h2>
+        <span class="fp-floor-badge">5 bàn</span>
+    </div>
+
+    <div class="fp-grid">
+        @foreach (var table in Model)
+        {
+            <div class="fp-table-card @table.StatusCss" id="table-card-@table.TableId" 
+                 data-table-id="@table.TableId" onclick="openTableDetail(@table.TableId)">
+                <div class="fp-table-status-indicator"></div>
+                <div class="fp-table-icon">
+                    <div class="fp-chair fp-chair-top"></div>
+                    <div class="fp-table-surface">
+                        <span class="fp-table-number">@table.TableId</span>
+                    </div>
+                    <div class="fp-chair fp-chair-bottom"></div>
+                    <div class="fp-chair fp-chair-left"></div>
+                    <div class="fp-chair fp-chair-right"></div>
+                </div>
+                <h3 class="fp-table-name">@table.TableName</h3>
+                <span class="fp-table-badge">@table.StatusText</span>
+                <div class="fp-table-order-info" id="order-info-@table.TableId" style="display:none;">
+                    <span class="fp-order-count">0 món</span>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Table Detail Modal -->
+<div class="modal fade" id="tableDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content fp-modal">
+            <div class="modal-header fp-modal-header">
+                <div class="fp-modal-title-group">
+                    <h5 class="modal-title" id="modal-table-name">Bàn 1</h5>
+                    <span class="fp-modal-status-badge" id="modal-table-status">Trống</span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body fp-modal-body">
+                <div class="row">
+                    <!-- QR Code -->
+                    <div class="col-md-5 text-center">
+                        <div class="fp-qr-section">
+                            <h6>📱 Mã QR Order</h6>
+                            <div class="fp-qr-wrapper" id="qr-code-wrapper">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                            <p class="fp-qr-url" id="qr-url"></p>
+                            <a href="#" id="qr-link" target="_blank" class="btn fp-btn-open-menu">
+                                🔗 Mở trang menu
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Order Details -->
+                    <div class="col-md-7">
+                        <div class="fp-order-section">
+                            <h6>📋 Đơn hàng</h6>
+                            <div id="order-detail-content">
+                                <div class="fp-no-order">
+                                    <span class="fp-no-order-icon">🍽️</span>
+                                    <p>Chưa có đơn hàng</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer fp-modal-footer">
+                <div id="modal-actions" class="fp-modal-actions">
+                    <!-- Buttons sẽ được render bằng JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="~/js/floorplan.js" asp-append-version="true"></script>
+}

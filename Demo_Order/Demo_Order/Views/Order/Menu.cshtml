@@ -1,0 +1,151 @@
+@model Dictionary<string, List<Demo_Order.Models.MenuItem>>
+@{
+    ViewData["Title"] = "Menu - " + ViewBag.TableName;
+    var existingOrder = ViewBag.ExistingOrder as Demo_Order.Models.Order;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/menu.css" asp-append-version="true" />
+}
+
+<input type="hidden" id="tableId" value="@ViewBag.TableId" />
+<input type="hidden" id="tableName" value="@ViewBag.TableName" />
+
+<!-- Header -->
+<div class="menu-header">
+    <div class="menu-header-bg"></div>
+    <div class="menu-header-content">
+        <span class="menu-restaurant-name">🍽️ Nhà Hàng Demo</span>
+        <h1 class="menu-title">Thực đơn</h1>
+        <span class="menu-table-badge">📍 @ViewBag.TableName</span>
+    </div>
+</div>
+
+<!-- Existing order banner -->
+@if (existingOrder != null && existingOrder.Items.Any())
+{
+    <div class="menu-existing-order" id="existing-order-banner">
+        <div class="menu-existing-order-inner">
+            <span class="menu-existing-icon">📋</span>
+            <div>
+                <strong>Bạn đã đặt @existingOrder.TotalItems món</strong>
+                <span class="menu-existing-total">@existingOrder.TotalAmount.ToString("#,##0")đ</span>
+            </div>
+            <button class="btn menu-btn-view-order" onclick="toggleExistingOrder()">Xem</button>
+        </div>
+        <div class="menu-existing-items" id="existing-order-items" style="display:none;">
+            @foreach (var item in existingOrder.Items)
+            {
+                <div class="menu-existing-item">
+                    <span>@item.Name</span>
+                    <span>x@item.Quantity</span>
+                    <span>@((item.Price * item.Quantity).ToString("#,##0"))đ</span>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- Category tabs -->
+<div class="menu-categories">
+    @{
+        var categories = Model.Keys.ToList();
+        var catEmojis = new Dictionary<string, string> {
+            {"Khai vị", "🥗"}, {"Món chính", "🍛"}, {"Đồ uống", "🍹"}, {"Tráng miệng", "🍰"}
+        };
+    }
+    @for (int i = 0; i < categories.Count; i++)
+    {
+        var cat = categories[i];
+        var emoji = catEmojis.ContainsKey(cat) ? catEmojis[cat] : "🍽️";
+        <button class="menu-cat-btn @(i == 0 ? "active" : "")" onclick="scrollToCategory('@cat', this)">
+            <span class="menu-cat-emoji">@emoji</span>
+            <span>@cat</span>
+        </button>
+    }
+</div>
+
+<!-- Menu Items -->
+<div class="menu-content">
+    @foreach (var category in Model)
+    {
+        var emoji = catEmojis.ContainsKey(category.Key) ? catEmojis[category.Key] : "🍽️";
+        <div class="menu-section" id="cat-@category.Key.Replace(" ", "-")">
+            <h2 class="menu-section-title">
+                <span>@emoji @category.Key</span>
+                <span class="menu-section-count">@category.Value.Count món</span>
+            </h2>
+            @foreach (var item in category.Value)
+            {
+                <div class="menu-item-card" id="menu-item-@item.Id">
+                    <img class="menu-item-img" src="@item.ImageUrl" alt="@item.Name" />
+                    <div class="menu-item-info">
+                        <h3 class="menu-item-name">@item.Name</h3>
+                        <p class="menu-item-desc">@item.Description</p>
+                        <div class="menu-item-bottom">
+                            <span class="menu-item-price">@item.Price.ToString("#,##0")đ</span>
+                            <div class="menu-item-qty" id="qty-group-@item.Id">
+                                <button class="menu-qty-btn minus" onclick="changeQty(@item.Id, -1)" style="display:none;">−</button>
+                                <span class="menu-qty-value" id="qty-@item.Id" style="display:none;">0</span>
+                                <button class="menu-qty-btn plus" onclick="changeQty(@item.Id, 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Floating Cart -->
+<div class="menu-cart" id="floating-cart" style="display:none;">
+    <div class="menu-cart-inner" onclick="showCartDetail()">
+        <div class="menu-cart-left">
+            <span class="menu-cart-badge" id="cart-count">0</span>
+            <span class="menu-cart-text">Giỏ hàng</span>
+        </div>
+        <div class="menu-cart-right">
+            <span class="menu-cart-total" id="cart-total">0đ</span>
+            <span class="menu-cart-arrow">→</span>
+        </div>
+    </div>
+</div>
+
+<!-- Cart Detail Modal -->
+<div class="menu-cart-overlay" id="cart-overlay" style="display:none;" onclick="hideCartDetail()">
+    <div class="menu-cart-detail" onclick="event.stopPropagation()">
+        <div class="menu-cart-detail-header">
+            <h3>🛒 Xác nhận đặt món</h3>
+            <button class="menu-cart-close" onclick="hideCartDetail()">✕</button>
+        </div>
+        <div class="menu-cart-detail-body" id="cart-detail-items">
+            <!-- Items rendered by JS -->
+        </div>
+        <div class="menu-cart-detail-footer">
+            <div class="menu-cart-detail-total">
+                <span>Tổng cộng</span>
+                <span id="cart-detail-total">0đ</span>
+            </div>
+            <button class="menu-btn-place-order" id="btn-place-order" onclick="placeOrder()">
+                <span class="btn-text">Đặt món</span>
+                <span class="btn-loading" style="display:none;">
+                    <span class="spinner-border spinner-border-sm"></span> Đang gửi...
+                </span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Success overlay -->
+<div class="menu-success-overlay" id="success-overlay" style="display:none;">
+    <div class="menu-success-content">
+        <div class="menu-success-icon">✅</div>
+        <h2>Đặt món thành công!</h2>
+        <p>Đơn hàng của bạn đã được gửi đến nhà bếp</p>
+        <button class="menu-btn-continue" onclick="closeSuccess()">Tiếp tục đặt thêm</button>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/menu.js" asp-append-version="true"></script>
+}

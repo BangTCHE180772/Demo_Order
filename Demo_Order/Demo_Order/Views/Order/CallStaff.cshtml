@@ -1,0 +1,171 @@
+@{
+    ViewData["Title"] = "Gọi nhân viên - " + ViewBag.TableName;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/menu.css" asp-append-version="true" />
+    <style>
+        .cs-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8fafc;
+            padding: 2rem;
+            text-align: center;
+        }
+        .cs-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            padding: 3rem 2rem;
+            max-width: 400px;
+            width: 100%;
+            animation: fadeInUp 0.6s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        }
+        .cs-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            display: block;
+            animation: pulse 2s infinite;
+        }
+        .cs-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: #0f172a;
+            margin-bottom: 0.75rem;
+        }
+        .cs-desc {
+            color: #475569;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        .cs-table-name {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #4f46e5;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        .cs-btn-call {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            width: 100%;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: #fff;
+            border: none;
+            border-radius: 16px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.2);
+        }
+        .cs-btn-call:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(239, 68, 68, 0.3);
+        }
+        .cs-btn-call:active {
+            transform: translateY(0);
+        }
+        .cs-btn-call:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .cs-success {
+            display: none;
+            animation: fadeInUp 0.4s ease;
+        }
+        .cs-success.show {
+            display: block;
+        }
+        .cs-success-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .cs-success-text {
+            color: #10b981;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+        .cs-success-sub {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @@keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+    </style>
+}
+
+<div class="cs-page">
+    <div class="cs-card">
+        <span class="cs-icon">🔔</span>
+        <h1 class="cs-title">Bàn chưa sẵn sàng</h1>
+        <span class="cs-table-name">📍 @ViewBag.TableName</span>
+        <p class="cs-desc">
+            Bàn này hiện chưa được kích hoạt phục vụ.<br/>
+            Vui lòng bấm nút bên dưới để gọi nhân viên hỗ trợ.
+        </p>
+
+        <div id="call-section">
+            <button class="cs-btn-call" id="btn-call" onclick="callStaff()">
+                <span>🙋</span>
+                <span id="btn-call-text">Gọi nhân viên</span>
+            </button>
+        </div>
+
+        <div class="cs-success" id="call-success">
+            <div class="cs-success-icon">✅</div>
+            <p class="cs-success-text">Đã gọi nhân viên!</p>
+            <p class="cs-success-sub">Nhân viên sẽ đến hỗ trợ bạn trong giây lát</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function callStaff() {
+            const btn = document.getElementById('btn-call');
+            const btnText = document.getElementById('btn-call-text');
+            btn.disabled = true;
+            btnText.textContent = 'Đang gọi...';
+
+            try {
+                const response = await fetch('/Order/RequestCallStaff', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tableId: @ViewBag.TableId })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('call-section').style.display = 'none';
+                    document.getElementById('call-success').classList.add('show');
+                }
+            } catch (error) {
+                btnText.textContent = 'Thử lại';
+                btn.disabled = false;
+                alert('Có lỗi xảy ra, vui lòng thử lại!');
+            }
+        }
+    </script>
+}
